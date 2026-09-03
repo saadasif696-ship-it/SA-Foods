@@ -1,0 +1,6 @@
+{
+  "name": "SA Foods",
+  "description": "Luxury fine-dining authentic Pakistani cuisine restaurant website by Muhammad Saad Asif, celebrating heritage spice routes and modern culinary craftsmanship.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
