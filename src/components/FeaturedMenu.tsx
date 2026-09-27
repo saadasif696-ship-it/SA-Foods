@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { FEATURED_DISHES } from '../data/restaurantData';
 import { ArrowRight, Flame } from 'lucide-react';
+import { useAdmin } from '../context/AdminContext';
 
 interface FeaturedMenuProps {
   onOpenMenuModal: () => void;
@@ -12,6 +12,10 @@ export const FeaturedMenu: React.FC<FeaturedMenuProps> = ({
   onOpenMenuModal,
   onSelectDishForReservation,
 }) => {
+  const { menuItems } = useAdmin();
+  const featured = menuItems.filter((d) => d.featured);
+  const displayDishes = featured.length > 0 ? featured.slice(0, 4) : menuItems.slice(0, 4);
+
   return (
     <section id="menu" className="w-full py-28 px-6 sm:px-8 lg:px-12 relative z-10">
       <div className="max-w-[1280px] mx-auto">
@@ -25,7 +29,7 @@ export const FeaturedMenu: React.FC<FeaturedMenuProps> = ({
               The Masterpieces
             </h2>
             <p className="text-sm text-[#BDBDBD] font-light mt-2 max-w-md">
-              Four pinnacle creations representing the heritage, fire, and fragrance of our royal kitchens.
+              Pinnacle creations representing the heritage, fire, and fragrance of our royal kitchens.
             </p>
           </div>
 
@@ -41,7 +45,7 @@ export const FeaturedMenu: React.FC<FeaturedMenuProps> = ({
 
         {/* 4 Dish Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-          {FEATURED_DISHES.map((dish, index) => (
+          {displayDishes.map((dish, index) => (
             <motion.div
               key={dish.id}
               initial={{ opacity: 0, y: 40 }}

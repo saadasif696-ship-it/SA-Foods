@@ -1,14 +1,24 @@
 @import "tailwindcss";
 
+:root {
+  --theme-gold: #D9A35F;
+  --theme-gold-light: #ffddb7;
+  --theme-gold-dark: #b88242;
+  --theme-burnt-orange: #C97A2B;
+  --theme-bg: #070707;
+  --theme-surface: #121414;
+  --theme-glow: rgba(217, 163, 95, 0.15);
+}
+
 @theme {
   --font-serif: "Playfair Display", Georgia, serif;
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-  --color-gold: #D9A35F;
-  --color-gold-light: #ffddb7;
-  --color-gold-dark: #b88242;
-  --color-burnt-orange: #C97A2B;
-  --color-deep-black: #070707;
-  --color-surface: #121414;
+  --color-gold: var(--theme-gold);
+  --color-gold-light: var(--theme-gold-light);
+  --color-gold-dark: var(--theme-gold-dark);
+  --color-burnt-orange: var(--theme-burnt-orange);
+  --color-deep-black: var(--theme-bg);
+  --color-surface: var(--theme-surface);
   --color-surface-card: #141616;
   --color-surface-border: rgba(255, 255, 255, 0.08);
   --color-warm-gray: #BDBDBD;
@@ -16,7 +26,7 @@
 
 @layer utilities {
   .text-gold-gradient {
-    background: linear-gradient(135deg, #D9A35F 0%, #ffddb7 50%, #C97A2B 100%);
+    background: linear-gradient(135deg, var(--theme-gold) 0%, var(--theme-gold-light) 50%, var(--theme-burnt-orange) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -26,7 +36,7 @@
   }
 
   .glow-gold {
-    box-shadow: 0 0 40px -10px rgba(217, 163, 95, 0.15);
+    box-shadow: 0 0 40px -10px var(--theme-glow);
   }
 }
 

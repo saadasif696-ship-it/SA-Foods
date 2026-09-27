@@ -14,9 +14,13 @@ import { ReservationSection } from './components/ReservationSection';
 import { GallerySection } from './components/GallerySection';
 import { Footer } from './components/Footer';
 import { SupabaseModal } from './components/SupabaseModal';
+import { AdminModal } from './components/AdminModal';
+import { AdminProvider, useAdmin } from './context/AdminContext';
 import { getStoredSupabaseConfig, testSupabaseConnection } from './lib/supabase';
+import { Sparkles } from 'lucide-react';
 
-export default function App() {
+function AppContent() {
+  const { restaurantInfo, themeSettings } = useAdmin();
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
   const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
@@ -80,12 +84,33 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070707] text-white selection:bg-[#D9A35F] selection:text-[#070707] relative overflow-x-hidden font-sans">
+    <div
+      className="min-h-screen text-white relative overflow-x-hidden font-sans transition-colors duration-500"
+      style={{
+        backgroundColor: themeSettings.bgColor,
+        color: '#FFFFFF',
+      }}
+    >
       {/* Custom Spring Cursor */}
       <CustomCursor />
 
       {/* Ambient Simmering Shader Canvas */}
-      <AmbientShader opacity={0.2} />
+      <AmbientShader opacity={themeSettings.glowOpacity} />
+
+      {/* Live Announcement Banner (Customizable via Admin Panel) */}
+      {restaurantInfo.announcementEnabled && restaurantInfo.announcementText && (
+        <div
+          className="fixed top-0 left-0 right-0 z-[60] py-2 px-4 text-center text-xs font-mono tracking-wider flex items-center justify-center gap-2 shadow-lg"
+          style={{
+            backgroundColor: themeSettings.surfaceColor,
+            borderBottom: `1px solid ${themeSettings.accentColor}66`,
+            color: themeSettings.accentColor,
+          }}
+        >
+          <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+          <span>{restaurantInfo.announcementText}</span>
+        </div>
+      )}
 
       {/* Sticky Luxury Navbar */}
       <Navbar
@@ -95,7 +120,7 @@ export default function App() {
         isSupabaseConnected={isSupabaseConnected}
       />
 
-      {/* Main Container - Constrained to max-w-[1280px] on desktop as requested */}
+      {/* Main Container - Constrained to max-w-[1280px] on desktop */}
       <main className="w-full relative z-10">
         {/* Hero Section */}
         <Hero
@@ -144,8 +169,19 @@ export default function App() {
         onConnectedChange={(connected) => setIsSupabaseConnected(connected)}
       />
 
+      {/* Full Executive Admin Modal (Secret key: SA FOODS ADMIN PANEL) */}
+      <AdminModal />
+
       {/* Footer & Owner Contact */}
       <Footer onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)} />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AdminProvider>
+      <AppContent />
+    </AdminProvider>
   );
 }

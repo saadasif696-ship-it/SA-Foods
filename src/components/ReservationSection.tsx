@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Calendar, Clock, Users, MapPin, CheckCircle, Sparkles, Send, Database } from 'lucide-react';
+import { Calendar, Clock, Users, MapPin, CheckCircle, Sparkles, Send, Database, Receipt } from 'lucide-react';
 import { ReservationData } from '../types';
 import { saveReservationToSupabase, getSupabaseClient } from '../lib/supabase';
+import { AnimatedReceiptSlip } from './AnimatedReceiptSlip';
 
 interface ReservationSectionProps {
   prefilledNotes?: string;
@@ -22,6 +23,7 @@ export const ReservationSection: React.FC<ReservationSectionProps> = ({ prefille
 
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [reservationCode, setReservationCode] = useState('');
+  const [isSlipOpen, setIsSlipOpen] = useState(false);
   const [savedToSupabase, setSavedToSupabase] = useState(false);
   const [supabaseLoading, setSupabaseLoading] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
@@ -58,6 +60,7 @@ export const ReservationSection: React.FC<ReservationSectionProps> = ({ prefille
       const res = await saveReservationToSupabase(code, formData);
       setSupabaseLoading(false);
       setIsSubmitted(true);
+      setIsSlipOpen(true);
       if (res.success) {
         setSavedToSupabase(true);
       } else {
@@ -66,8 +69,17 @@ export const ReservationSection: React.FC<ReservationSectionProps> = ({ prefille
     } catch (err: any) {
       setSupabaseLoading(false);
       setIsSubmitted(true);
+      setIsSlipOpen(true);
       setSubmissionError(err?.message || 'Sync error');
     }
+  };
+
+  const handleOpenDemoSlip = () => {
+    if (!reservationCode) {
+      const randomNum = Math.floor(1000 + Math.random() * 9000);
+      setReservationCode(`SAF-2026-${randomNum}`);
+    }
+    setIsSlipOpen(true);
   };
 
   const handleReset = () => {
@@ -111,9 +123,18 @@ export const ReservationSection: React.FC<ReservationSectionProps> = ({ prefille
           <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-white font-normal mb-3">
             Reservation Request
           </h2>
-          <p className="text-sm text-[#BDBDBD] font-light leading-relaxed">
+          <p className="text-sm text-[#BDBDBD] font-light leading-relaxed mb-4">
             We welcome reservations up to 30 days in advance. For tasting menu bookings or parties exceeding 8 guests, our concierge personally attends to your preferences.
           </p>
+
+          <button
+            type="button"
+            onClick={handleOpenDemoSlip}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#D9A35F]/40 bg-[#D9A35F]/10 hover:bg-[#D9A35F]/20 text-[#D9A35F] text-xs font-mono uppercase tracking-wider transition-all cursor-pointer hover:border-[#D9A35F] active:scale-95"
+          >
+            <Receipt className="w-3.5 h-3.5" />
+            <span>Preview Order Slip Animation</span>
+          </button>
         </div>
 
         {/* Form or Confirmation Card */}
@@ -279,7 +300,7 @@ export const ReservationSection: React.FC<ReservationSectionProps> = ({ prefille
                     {supabaseLoading ? (
                       <>
                         <span className="w-4 h-4 border-2 border-[#070707] border-t-transparent rounded-full animate-spin" />
-                        <span>Reserving & Syncing to Supabase...</span>
+                        <span>Confirming Reservation...</span>
                       </>
                     ) : (
                       <>
@@ -349,31 +370,54 @@ export const ReservationSection: React.FC<ReservationSectionProps> = ({ prefille
                         <span className="text-white/80 italic">{formData.specialRequests}</span>
                       </div>
                     )}
-                    {savedToSupabase && (
-                      <div className="pt-2 border-t border-emerald-500/20 mt-2 flex items-center gap-1.5 text-[11px] text-emerald-400 font-mono">
-                        <Database className="w-3.5 h-3.5" />
-                        <span>Synchronized with Supabase DB (Table: reservations)</span>
-                      </div>
-                    )}
-                    {submissionError && (
-                      <div className="pt-2 border-t border-amber-500/20 mt-2 flex items-center gap-1.5 text-[11px] text-amber-400 font-mono">
-                        <span>DB Status: {submissionError}</span>
-                      </div>
-                    )}
+                    <div className="pt-2.5 border-t border-[#D9A35F]/20 mt-2 flex items-center justify-between text-[11px] font-mono">
+                      <span className="text-[#BDBDBD]">Status:</span>
+                      <span className="text-emerald-400 font-semibold tracking-wider uppercase flex items-center gap-1">
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>Confirmed & Logged</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <button
-                  onClick={handleReset}
-                  className="px-8 py-3 border border-[#D9A35F] text-[#D9A35F] text-xs uppercase tracking-widest hover:bg-[#D9A35F] hover:text-[#070707] transition-all"
-                >
-                  Make Another Reservation
-                </button>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md">
+                  <button
+                    type="button"
+                    onClick={() => setIsSlipOpen(true)}
+                    className="w-full sm:w-auto px-6 py-3 bg-[#D9A35F] text-[#070707] font-medium text-xs font-mono uppercase tracking-widest hover:bg-[#e2b06e] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-95"
+                  >
+                    <Receipt className="w-4 h-4" />
+                    <span>View Animated Slip</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="w-full sm:w-auto px-6 py-3 border border-[#D9A35F]/60 text-[#D9A35F] text-xs font-mono uppercase tracking-widest hover:bg-[#D9A35F]/15 transition-all cursor-pointer"
+                  >
+                    New Reservation
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Realistic Animated Order Slip Modal */}
+      <AnimatedReceiptSlip
+        isOpen={isSlipOpen}
+        onClose={() => setIsSlipOpen(false)}
+        type="reservation"
+        receiptNo={reservationCode || 'SAF-2026-8821'}
+        customerName={formData.name || 'Muhammad Saad Asif'}
+        customerPhone={formData.phone || '+92 300 1234567'}
+        customerEmail={formData.email || 'guest@safoods.pk'}
+        dateTime={`${formData.date || 'Tomorrow Evening'} at ${formData.time || '20:00'}`}
+        partySize={formData.guests || '2'}
+        seatingZone={formData.seating || 'courtyard'}
+        specialRequests={formData.specialRequests || 'Imperial fine dining table request'}
+      />
     </section>
   );
 };

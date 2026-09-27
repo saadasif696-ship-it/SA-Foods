@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, Calendar, Sparkles, Database } from 'lucide-react';
+import { Menu, X, Calendar, Sparkles, Database, Lock } from 'lucide-react';
+import { useAdmin } from '../context/AdminContext';
 
 interface NavbarProps {
   onOpenMenuModal: () => void;
@@ -15,6 +16,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSupabaseModal,
   isSupabaseConnected = false,
 }) => {
+  const { openAdminModal, restaurantInfo } = useAdmin();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
@@ -84,7 +86,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <div>
             <span className="font-serif text-xl sm:text-2xl text-white tracking-widest block font-medium group-hover:text-[#D9A35F] transition-colors">
-              SA FOODS
+              {restaurantInfo.brandName}
             </span>
             <span className="text-[9px] uppercase tracking-[0.25em] text-[#D9A35F] block font-light">
               Fine Pakistani Dining
@@ -124,11 +126,11 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <button
             id="nav-quick-menu-btn"
             onClick={onOpenMenuModal}
-            className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs uppercase tracking-wider text-[#BDBDBD] hover:text-[#D9A35F] transition-colors"
+            className="hidden md:inline-flex items-center gap-2 px-3 py-2 text-xs uppercase tracking-wider text-[#BDBDBD] hover:text-[#D9A35F] transition-colors cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5 text-[#D9A35F]" />
             <span>Catalog</span>
@@ -137,7 +139,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             id="nav-reserve-table-btn"
             onClick={onNavigateToReservations}
-            className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 text-xs font-medium uppercase tracking-[0.15em] text-[#070707] bg-[#D9A35F] border border-[#D9A35F] hover:bg-transparent hover:text-[#D9A35F] transition-all duration-300 shadow-[0_0_20px_rgba(217,163,95,0.2)] active:scale-95"
+            className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 text-xs font-medium uppercase tracking-[0.15em] text-[#070707] bg-[#D9A35F] border border-[#D9A35F] hover:bg-transparent hover:text-[#D9A35F] transition-all duration-300 shadow-[0_0_20px_rgba(217,163,95,0.2)] active:scale-95 cursor-pointer"
           >
             <Calendar className="w-3.5 h-3.5" />
             <span>Reserve Table</span>
@@ -147,7 +149,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             id="nav-mobile-toggle-btn"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-[#BDBDBD] hover:text-white lg:hidden border border-white/10 ml-1"
+            className="p-2 text-[#BDBDBD] hover:text-white lg:hidden border border-white/10 ml-1 cursor-pointer"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -180,24 +182,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </a>
               ))}
               <div className="pt-2 flex flex-col gap-3">
-                {onOpenSupabaseModal && (
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      onOpenSupabaseModal();
-                    }}
-                    className="w-full py-2.5 border border-emerald-500/40 text-emerald-400 text-xs uppercase tracking-widest hover:bg-emerald-950/30 flex items-center justify-center gap-2"
-                  >
-                    <Database className="w-3.5 h-3.5" />
-                    <span>Supabase DB Settings</span>
-                  </button>
-                )}
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
                     onOpenMenuModal();
                   }}
-                  className="w-full py-2.5 border border-[#D9A35F]/40 text-[#D9A35F] text-xs uppercase tracking-widest hover:bg-[#D9A35F]/10"
+                  className="w-full py-2.5 border border-[#D9A35F]/40 text-[#D9A35F] text-xs uppercase tracking-widest hover:bg-[#D9A35F]/10 cursor-pointer"
                 >
                   View Full Menu
                 </button>

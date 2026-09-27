@@ -130,6 +130,8 @@ export async function fetchMenuItems(): Promise<{ items: DishItem[]; isFromDatab
   }
 }
 
+export const fetchMenuFromSupabase = fetchMenuItems;
+
 /**
  * Save table reservation to Supabase
  */
@@ -165,6 +167,101 @@ export async function saveReservationToSupabase(
   } catch (err: any) {
     console.error('Reservation error:', err);
     return { success: false, message: err.message };
+  }
+}
+
+/**
+ * Fetch all reservations from Supabase
+ */
+export async function fetchReservationsFromSupabase(): Promise<{ data: any[]; error?: string }> {
+  const client = getSupabaseClient();
+  if (!client) return { data: [] };
+
+  try {
+    const { data, error } = await client
+      .from('reservations')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.warn('Error fetching reservations:', error);
+      return { data: [], error: error.message };
+    }
+    return { data: data || [] };
+  } catch (err: any) {
+    return { data: [], error: err?.message };
+  }
+}
+
+/**
+ * Update reservation status
+ */
+export async function updateReservationStatusInSupabase(id: string, status: string): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+
+  try {
+    const { error } = await client.from('reservations').update({ status }).eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Delete a reservation from Supabase
+ */
+export async function deleteReservationFromSupabase(id: string): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+
+  try {
+    const { error } = await client.from('reservations').delete().eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Upsert a single menu item to Supabase
+ */
+export async function saveDishToSupabase(dish: DishItem): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+
+  try {
+    const payload = {
+      id: dish.id,
+      name: dish.name,
+      urdu_name: dish.urduName || '',
+      description: dish.description,
+      price: dish.price,
+      category: dish.category,
+      tag: dish.tag || '',
+      image: dish.image,
+      featured: dish.featured || false,
+    };
+
+    const { error } = await client.from('menu_items').upsert(payload, { onConflict: 'id' });
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Delete a menu item from Supabase
+ */
+export async function deleteDishFromSupabase(id: string): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+
+  try {
+    const { error } = await client.from('menu_items').delete().eq('id', id);
+    return !error;
+  } catch {
+    return false;
   }
 }
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, Utensils, Award, Flame, Clock } from 'lucide-react';
+import { useAdmin } from '../context/AdminContext';
 
 interface HeroProps {
   onReserveClick: () => void;
@@ -8,6 +9,7 @@ interface HeroProps {
 }
 
 export const Hero: React.FC<HeroProps> = ({ onReserveClick, onTastingClick }) => {
+  const { restaurantInfo } = useAdmin();
   return (
     <section
       id="home"
@@ -48,7 +50,7 @@ export const Hero: React.FC<HeroProps> = ({ onReserveClick, onTastingClick }) =>
           >
             <span className="w-2 h-2 rounded-full bg-[#D9A35F] animate-pulse" />
             <span className="text-[11px] font-medium tracking-[0.2em] uppercase text-[#D9A35F]">
-              A Culinary Masterpiece by Muhammad Saad Asif
+              A Culinary Masterpiece by {restaurantInfo.chefName}
             </span>
           </motion.div>
 

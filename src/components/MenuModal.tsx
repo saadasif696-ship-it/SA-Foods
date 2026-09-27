@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Sparkles, Utensils, Check, Database } from 'lucide-react';
-import { FULL_MENU_ITEMS } from '../data/restaurantData';
+import { X, Sparkles, Utensils, Check, Database, Receipt } from 'lucide-react';
 import { DishItem } from '../types';
-import { fetchMenuItems } from '../lib/supabase';
+import { useAdmin } from '../context/AdminContext';
+import { AnimatedReceiptSlip } from './AnimatedReceiptSlip';
 
 interface MenuModalProps {
   isOpen: boolean;
@@ -16,19 +16,11 @@ export const MenuModal: React.FC<MenuModalProps> = ({
   onClose,
   onSelectForReservation,
 }) => {
+  const { menuItems, categories } = useAdmin();
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [menuItems, setMenuItems] = useState<DishItem[]>(FULL_MENU_ITEMS);
-  const [isFromDatabase, setIsFromDatabase] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchMenuItems().then((res) => {
-        setMenuItems(res.items);
-        setIsFromDatabase(res.isFromDatabase);
-      });
-    }
-  }, [isOpen]);
+  const [isSlipOpen, setIsSlipOpen] = useState(false);
+  const [orderCode, setOrderCode] = useState(() => `SAF-ORD-${Math.floor(1000 + Math.random() * 9000)}`);
 
   // Background scroll lock
   useEffect(() => {
@@ -53,18 +45,18 @@ export const MenuModal: React.FC<MenuModalProps> = ({
 
   if (!isOpen) return null;
 
-  const categories = [
+  const categoryTabs = [
     { id: 'all', label: 'Complete Collection' },
-    { id: 'starters', label: 'Starters & Amuse' },
-    { id: 'mains', label: 'Imperial Mains' },
-    { id: 'desserts', label: 'Shahi Desserts' },
-    { id: 'beverages', label: 'Botanicals & Teas' },
+    ...categories.map((c) => ({
+      id: c.toLowerCase(),
+      label: c.charAt(0).toUpperCase() + c.slice(1),
+    })),
   ];
 
   const filteredItems =
     activeCategory === 'all'
       ? menuItems
-      : menuItems.filter((item) => item.category === activeCategory);
+      : menuItems.filter((item) => item.category.toLowerCase() === activeCategory.toLowerCase());
 
   const starters = menuItems.filter((item) => item.category === 'starters');
   const mains = menuItems.filter((item) => item.category === 'mains');
@@ -187,11 +179,6 @@ export const MenuModal: React.FC<MenuModalProps> = ({
               <div className="inline-flex items-center gap-2 text-[10px] font-mono tracking-[0.25em] uppercase text-[#D9A35F] mb-1">
                 <Sparkles className="w-3 h-3" />
                 <span>SA Foods Master Catalog</span>
-                {isFromDatabase && (
-                  <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 font-mono tracking-normal capitalize">
-                    <Database className="w-2.5 h-2.5" /> Supabase Live
-                  </span>
-                )}
               </div>
               <h2 className="font-serif text-2xl sm:text-3xl text-white font-normal">
                 Complete Culinary Selection
@@ -210,11 +197,11 @@ export const MenuModal: React.FC<MenuModalProps> = ({
 
           {/* Filter Tabs */}
           <div className="max-w-[1280px] mx-auto flex items-center gap-2 sm:gap-4 overflow-x-auto pt-4 no-scrollbar">
-            {categories.map((cat) => (
+            {categoryTabs.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`px-4 py-1.5 text-xs uppercase tracking-[0.15em] transition-all whitespace-nowrap ${
+                className={`px-4 py-1.5 text-xs uppercase tracking-[0.15em] transition-all whitespace-nowrap cursor-pointer ${
                   activeCategory === cat.id
                     ? 'bg-[#D9A35F] text-[#070707] font-medium'
                     : 'text-[#BDBDBD] hover:text-white border border-white/10'
@@ -230,10 +217,18 @@ export const MenuModal: React.FC<MenuModalProps> = ({
         <div className="max-w-[1280px] w-full mx-auto px-6 sm:px-8 lg:px-12 py-10 flex-grow">
           {activeCategory === 'all' ? (
             <>
-              {renderSection('Starters & Charred Kebabs', 'مقبلات و کباب', starters)}
-              {renderSection('The Imperial Mains & Dum Breads', 'خاص پکوان و نان', mains)}
-              {renderSection('Shahi Desserts & Sweet Nectars', 'شاہی حلوہ جات', desserts)}
-              {renderSection('Botanical Infusions & Kashmiri Teas', 'کشمیری چائے و قہوہ', beverages)}
+              {categories.map((cat) => {
+                const catDishes = menuItems.filter(
+                  (d) => d.category.toLowerCase() === cat.toLowerCase()
+                );
+                if (catDishes.length === 0) return null;
+                const title = cat.charAt(0).toUpperCase() + cat.slice(1);
+                return (
+                  <React.Fragment key={cat}>
+                    {renderSection(title, '', catDishes)}
+                  </React.Fragment>
+                );
+              })}
             </>
           ) : (
             <div className="py-4">
@@ -307,23 +302,77 @@ export const MenuModal: React.FC<MenuModalProps> = ({
           )}
 
           {/* Selected items notification bar */}
-          {selectedItems.length > 0 && (
-            <div className="sticky bottom-6 mt-8 p-4 bg-[#121414] border border-[#D9A35F] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl">
-              <div className="flex items-center gap-3">
-                <Utensils className="w-5 h-5 text-[#D9A35F]" />
-                <span className="text-xs sm:text-sm text-white font-light">
-                  You have selected <strong className="text-[#D9A35F]">{selectedItems.length}</strong> specialty item(s) for your dining experience.
-                </span>
+          {selectedItems.length > 0 && (() => {
+            const chosenDishes = menuItems.filter((m) => selectedItems.includes(m.id));
+            const totalNumber = chosenDishes.reduce((acc, curr) => {
+              const numeric = parseInt(curr.price.replace(/[^\d]/g, ''), 10) || 0;
+              return acc + numeric;
+            }, 0);
+            const formattedTotal = `PKR ${totalNumber.toLocaleString()}`;
+
+            return (
+              <div className="sticky bottom-6 mt-8 p-4 bg-[#121414] border border-[#D9A35F] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl z-30">
+                <div className="flex items-center gap-3">
+                  <Utensils className="w-5 h-5 text-[#D9A35F]" />
+                  <span className="text-xs sm:text-sm text-white font-light">
+                    You have selected <strong className="text-[#D9A35F]">{selectedItems.length}</strong> dish(es) • Estimated Total: <strong className="text-[#D9A35F]">{formattedTotal}</strong>
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOrderCode(`SAF-ORD-${Math.floor(1000 + Math.random() * 9000)}`);
+                      setIsSlipOpen(true);
+                    }}
+                    className="px-4 py-2 bg-[#1E1E1E] border border-[#D9A35F]/60 text-[#D9A35F] hover:bg-[#D9A35F] hover:text-[#070707] text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer shadow"
+                  >
+                    <Receipt className="w-3.5 h-3.5" />
+                    <span>View Slip Animation</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-5 py-2 bg-[#D9A35F] text-[#070707] text-xs uppercase font-medium tracking-widest hover:bg-[#e4b57b] transition-colors cursor-pointer"
+                  >
+                    Proceed to Table
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={onClose}
-                className="px-5 py-2 bg-[#D9A35F] text-[#070707] text-xs uppercase font-medium tracking-widest hover:bg-white transition-colors"
-              >
-                Proceed to Reservation
-              </button>
-            </div>
-          )}
+            );
+          })()}
         </div>
+
+        {/* Animated Order Slip for Selected Menu Dishes */}
+        {(() => {
+          const chosenDishes = menuItems.filter((m) => selectedItems.includes(m.id));
+          const totalNumber = chosenDishes.reduce((acc, curr) => {
+            const numeric = parseInt(curr.price.replace(/[^\d]/g, ''), 10) || 0;
+            return acc + numeric;
+          }, 0);
+          const formattedTotal = `PKR ${totalNumber.toLocaleString()}`;
+
+          return (
+            <AnimatedReceiptSlip
+              isOpen={isSlipOpen}
+              onClose={() => setIsSlipOpen(false)}
+              type="order"
+              receiptNo={orderCode}
+              customerName="Valued Guest"
+              customerPhone="+92 300 1234567"
+              dateTime={new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' • Dine-in / Takeaway'}
+              items={chosenDishes.map((d) => ({
+                name: d.name,
+                qty: 1,
+                price: d.price,
+              }))}
+              totalAmount={formattedTotal}
+              specialRequests="Selected from SA Foods Master Menu Catalog"
+            />
+          );
+        })()}
       </motion.div>
     </AnimatePresence>
   );
