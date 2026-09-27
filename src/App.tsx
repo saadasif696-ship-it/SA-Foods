@@ -13,10 +13,24 @@ import { Testimonials } from './components/Testimonials';
 import { ReservationSection } from './components/ReservationSection';
 import { GallerySection } from './components/GallerySection';
 import { Footer } from './components/Footer';
+import { SupabaseModal } from './components/SupabaseModal';
+import { getStoredSupabaseConfig, testSupabaseConnection } from './lib/supabase';
 
 export default function App() {
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
+  const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
+  const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
   const [prefilledReservationNotes, setPrefilledReservationNotes] = useState('');
+
+  // Check Supabase connection on load
+  useEffect(() => {
+    const config = getStoredSupabaseConfig();
+    if (config.url && config.anonKey) {
+      testSupabaseConnection(config.url, config.anonKey).then((res) => {
+        setIsSupabaseConnected(res.success);
+      });
+    }
+  }, []);
 
   // Initialize Lenis for buttery smooth scrolling
   useEffect(() => {
@@ -77,6 +91,8 @@ export default function App() {
       <Navbar
         onOpenMenuModal={() => setIsMenuModalOpen(true)}
         onNavigateToReservations={scrollToReservations}
+        onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)}
+        isSupabaseConnected={isSupabaseConnected}
       />
 
       {/* Main Container - Constrained to max-w-[1280px] on desktop as requested */}
@@ -121,8 +137,15 @@ export default function App() {
         }}
       />
 
+      {/* Supabase Integration & Database Modal */}
+      <SupabaseModal
+        isOpen={isSupabaseModalOpen}
+        onClose={() => setIsSupabaseModalOpen(false)}
+        onConnectedChange={(connected) => setIsSupabaseConnected(connected)}
+      />
+
       {/* Footer & Owner Contact */}
-      <Footer />
+      <Footer onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)} />
     </div>
   );
 }

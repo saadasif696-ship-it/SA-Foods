@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Sparkles, Utensils, Check } from 'lucide-react';
+import { X, Sparkles, Utensils, Check, Database } from 'lucide-react';
 import { FULL_MENU_ITEMS } from '../data/restaurantData';
 import { DishItem } from '../types';
+import { fetchMenuItems } from '../lib/supabase';
 
 interface MenuModalProps {
   isOpen: boolean;
@@ -17,6 +18,17 @@ export const MenuModal: React.FC<MenuModalProps> = ({
 }) => {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [menuItems, setMenuItems] = useState<DishItem[]>(FULL_MENU_ITEMS);
+  const [isFromDatabase, setIsFromDatabase] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchMenuItems().then((res) => {
+        setMenuItems(res.items);
+        setIsFromDatabase(res.isFromDatabase);
+      });
+    }
+  }, [isOpen]);
 
   // Background scroll lock
   useEffect(() => {
@@ -51,13 +63,13 @@ export const MenuModal: React.FC<MenuModalProps> = ({
 
   const filteredItems =
     activeCategory === 'all'
-      ? FULL_MENU_ITEMS
-      : FULL_MENU_ITEMS.filter((item) => item.category === activeCategory);
+      ? menuItems
+      : menuItems.filter((item) => item.category === activeCategory);
 
-  const starters = FULL_MENU_ITEMS.filter((item) => item.category === 'starters');
-  const mains = FULL_MENU_ITEMS.filter((item) => item.category === 'mains');
-  const desserts = FULL_MENU_ITEMS.filter((item) => item.category === 'desserts');
-  const beverages = FULL_MENU_ITEMS.filter((item) => item.category === 'beverages');
+  const starters = menuItems.filter((item) => item.category === 'starters');
+  const mains = menuItems.filter((item) => item.category === 'mains');
+  const desserts = menuItems.filter((item) => item.category === 'desserts');
+  const beverages = menuItems.filter((item) => item.category === 'beverages');
 
   const toggleSelectItem = (id: string) => {
     setSelectedItems((prev) =>
@@ -175,6 +187,11 @@ export const MenuModal: React.FC<MenuModalProps> = ({
               <div className="inline-flex items-center gap-2 text-[10px] font-mono tracking-[0.25em] uppercase text-[#D9A35F] mb-1">
                 <Sparkles className="w-3 h-3" />
                 <span>SA Foods Master Catalog</span>
+                {isFromDatabase && (
+                  <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 font-mono tracking-normal capitalize">
+                    <Database className="w-2.5 h-2.5" /> Supabase Live
+                  </span>
+                )}
               </div>
               <h2 className="font-serif text-2xl sm:text-3xl text-white font-normal">
                 Complete Culinary Selection

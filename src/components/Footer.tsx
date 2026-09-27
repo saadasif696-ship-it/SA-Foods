@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { Mail, MapPin, Phone, ArrowUp, Send, CheckCircle2 } from 'lucide-react';
+import { Mail, MapPin, Phone, ArrowUp, Send, CheckCircle2, Database } from 'lucide-react';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  onOpenSupabaseModal?: () => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onOpenSupabaseModal }) => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
 
@@ -143,6 +147,16 @@ export const Footer: React.FC = () => {
             <a href="#reservations" className="hover:text-[#D9A35F] transition-colors">
               CONCIERGE
             </a>
+            {onOpenSupabaseModal && (
+              <button
+                onClick={onOpenSupabaseModal}
+                className="hover:text-[#D9A35F] transition-colors flex items-center gap-1 text-[#888] hover:text-[#D9A35F]"
+                title="Management Portal"
+              >
+                <Database className="w-3 h-3" />
+                <span>ADMIN / DB</span>
+              </button>
+            )}
 
             <button
               onClick={scrollToTop}

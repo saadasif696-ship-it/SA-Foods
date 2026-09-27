@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, Calendar, Sparkles } from 'lucide-react';
+import { Menu, X, Calendar, Sparkles, Database } from 'lucide-react';
 
 interface NavbarProps {
   onOpenMenuModal: () => void;
   onNavigateToReservations: () => void;
+  onOpenSupabaseModal?: () => void;
+  isSupabaseConnected?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onOpenMenuModal,
   onNavigateToReservations,
+  onOpenSupabaseModal,
+  isSupabaseConnected = false,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -176,6 +180,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </a>
               ))}
               <div className="pt-2 flex flex-col gap-3">
+                {onOpenSupabaseModal && (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenSupabaseModal();
+                    }}
+                    className="w-full py-2.5 border border-emerald-500/40 text-emerald-400 text-xs uppercase tracking-widest hover:bg-emerald-950/30 flex items-center justify-center gap-2"
+                  >
+                    <Database className="w-3.5 h-3.5" />
+                    <span>Supabase DB Settings</span>
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);

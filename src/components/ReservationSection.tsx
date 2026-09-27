@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Calendar, Clock, Users, MapPin, CheckCircle, Sparkles, Send } from 'lucide-react';
+import { Calendar, Clock, Users, MapPin, CheckCircle, Sparkles, Send, Database } from 'lucide-react';
 import { ReservationData } from '../types';
+import { saveReservationToSupabase, getSupabaseClient } from '../lib/supabase';
 
 interface ReservationSectionProps {
   prefilledNotes?: string;
@@ -21,6 +22,9 @@ export const ReservationSection: React.FC<ReservationSectionProps> = ({ prefille
 
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [reservationCode, setReservationCode] = useState('');
+  const [savedToSupabase, setSavedToSupabase] = useState(false);
+  const [supabaseLoading, setSupabaseLoading] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   // Update specialRequests if prefilled changes
   React.useEffect(() => {
@@ -41,16 +45,35 @@ export const ReservationSection: React.FC<ReservationSectionProps> = ({ prefille
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmissionError(null);
+    setSupabaseLoading(true);
+
     const randomNum = Math.floor(1000 + Math.random() * 9000);
     const code = `SAF-2026-${randomNum}`;
     setReservationCode(code);
-    setIsSubmitted(true);
+
+    try {
+      const res = await saveReservationToSupabase(code, formData);
+      setSupabaseLoading(false);
+      setIsSubmitted(true);
+      if (res.success) {
+        setSavedToSupabase(true);
+      } else {
+        setSubmissionError(res.message);
+      }
+    } catch (err: any) {
+      setSupabaseLoading(false);
+      setIsSubmitted(true);
+      setSubmissionError(err?.message || 'Sync error');
+    }
   };
 
   const handleReset = () => {
     setIsSubmitted(false);
+    setSavedToSupabase(false);
+    setSubmissionError(null);
     setFormData({
       name: '',
       email: '',
@@ -250,10 +273,20 @@ export const ReservationSection: React.FC<ReservationSectionProps> = ({ prefille
                 <div className="md:col-span-2 pt-4">
                   <button
                     type="submit"
-                    className="w-full py-4 bg-[#D9A35F] text-[#070707] font-medium text-xs uppercase tracking-[0.2em] border border-[#D9A35F] hover:bg-transparent hover:text-[#D9A35F] transition-all duration-300 shadow-[0_0_30px_rgba(217,163,95,0.25)] flex items-center justify-center gap-3 active:scale-98"
+                    disabled={supabaseLoading}
+                    className="w-full py-4 bg-[#D9A35F] text-[#070707] font-medium text-xs uppercase tracking-[0.2em] border border-[#D9A35F] hover:bg-[#E5B57A] transition-all duration-300 shadow-[0_0_30px_rgba(217,163,95,0.25)] flex items-center justify-center gap-3 active:scale-98 disabled:opacity-60 cursor-pointer"
                   >
-                    <Send className="w-4 h-4" />
-                    <span>Confirm Reservation Request</span>
+                    {supabaseLoading ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-[#070707] border-t-transparent rounded-full animate-spin" />
+                        <span>Reserving & Syncing to Supabase...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>Confirm Reservation Request</span>
+                      </>
+                    )}
                   </button>
                   <p className="text-center text-[11px] text-[#BDBDBD]/60 font-light mt-3">
                     A confirmation call or SMS will be dispatched 24 hours prior to confirm seating.
@@ -314,6 +347,17 @@ export const ReservationSection: React.FC<ReservationSectionProps> = ({ prefille
                       <div className="pt-2 border-t border-white/5 mt-2">
                         <span className="text-[#BDBDBD] block mb-1">Notes:</span>
                         <span className="text-white/80 italic">{formData.specialRequests}</span>
+                      </div>
+                    )}
+                    {savedToSupabase && (
+                      <div className="pt-2 border-t border-emerald-500/20 mt-2 flex items-center gap-1.5 text-[11px] text-emerald-400 font-mono">
+                        <Database className="w-3.5 h-3.5" />
+                        <span>Synchronized with Supabase DB (Table: reservations)</span>
+                      </div>
+                    )}
+                    {submissionError && (
+                      <div className="pt-2 border-t border-amber-500/20 mt-2 flex items-center gap-1.5 text-[11px] text-amber-400 font-mono">
+                        <span>DB Status: {submissionError}</span>
                       </div>
                     )}
                   </div>
